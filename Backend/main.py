@@ -13,8 +13,15 @@ def readExpenses():
     return get_all_expenses()
 
 @app.delete("/delete-expense/{expense_id}")
-def remove_expense(expense_id: int):
+def removeExpense(expense_id: int):
     result = delete_expense(expense_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.put("/update-expense/{expense_id}")
+def modifyExpense(expense_id: int, updated_expense: Expense):
+    result = update_expense(expense_id, updated_expense)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result

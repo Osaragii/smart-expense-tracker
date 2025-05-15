@@ -55,3 +55,32 @@ def delete_expense(expense_id: int):
         writer.writerows(updated_rows)
 
     return {"message": "Expense deleted"}
+
+#For updating expenses meow meow meow
+def update_expense(expense_id: int, updated_expense: Expense):
+    updated_rows = []
+    found = False
+    with open(CSV_FILE, mode="r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if int(row["id"]) == expense_id:
+                updated_rows.append({
+                    "id": expense_id,
+                    "amount": updated_expense.amount,
+                    "category": updated_expense.category,
+                    "description": updated_expense.description,
+                    "date": str(updated_expense.date)
+                })
+                found = True
+            else:
+                updated_rows.append(row)
+            
+        if not found:
+            return {"error": "Expense not found"}
+        
+        with open(CSV_FILE, mode="w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["id", "amount", "category", "description", "date"])
+            writer.writeheader()
+            writer.writerrows(updated_rows)
+
+        return {"message": "Expense updated"}
