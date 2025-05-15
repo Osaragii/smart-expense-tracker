@@ -22,10 +22,10 @@ def get_next_id():
 
 #Add feature meow
 def add_expense(expense: Expense):
-    expense_id = get_next_id
+    expense_id = get_next_id()
     with open(CSV_FILE, mode="a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([expense_id, expense.amount. expense.category, expense.description, expense.date])
+        writer.writerow([expense_id, expense.amount, expense.category, expense.description, expense.date])
     return {"message": "Expense added", "id": expense_id}
 
 #To read all expenses meow
@@ -50,7 +50,7 @@ def delete_expense(expense_id: int):
         return {"error": "Expense not found"}
 
     with open(CSV_FILE, mode="w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "amount", "category", "desceription", "date"])
+        writer = csv.DictWriter(f, fieldnames=["id", "amount", "category", "description", "date"])
         writer.writeheader()
         writer.writerows(updated_rows)
 
@@ -101,7 +101,7 @@ def get_filtered_expenses(category=None, start_date=None, end_date=None, search=
             if end_date and row["date"] > str(end_date):
                 continue
 
-            if search and search.lower not in row["description"].lower():
+            if search and search.lower() not in row["description"].lower():
                 continue
 
             filtered.append(row)
