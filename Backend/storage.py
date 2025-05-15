@@ -84,3 +84,26 @@ def update_expense(expense_id: int, updated_expense: Expense):
             writer.writerrows(updated_rows)
 
         return {"message": "Expense updated"}
+
+#Filter Expenses
+def get_filtered_expenses(category=None, start_date=None, end_date=None, search=None):
+    with open(CSV_FILE, mode="r") as f:
+        reader = csv.DictReader(f)
+        filtered = []
+
+        for row in reader:
+            if category and row["category"].lower() != category.lower():
+                continue
+
+            if start_date and row["date"] < str(start_date):
+                continue
+
+            if end_date and row["date"] > str(end_date):
+                continue
+
+            if search and search.lower not in row["description"].lower():
+                continue
+
+            filtered.append(row)
+
+    return filtered

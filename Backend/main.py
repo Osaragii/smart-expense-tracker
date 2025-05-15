@@ -1,6 +1,14 @@
 from fastapi import FastAPI, HTTPException
+from typing import Optional
+from datetime import date
 from models import Expense
-from storage import add_expense, get_all_expenses, delete_expense, update_expense
+from storage import (
+    add_expense, 
+    get_all_expenses, 
+    get_filtered_expenses,  
+    delete_expense, 
+    update_expense
+)
 
 app = FastAPI()
 
@@ -9,7 +17,14 @@ def createExpense(expense: Expense):
     return add_expense(expense)
 
 @app.get("/expenses")
-def readExpenses():
+def readExpenses(
+    category: Optional[str] = None, 
+    start_date: Optional[date] = None, 
+    end_date: Optional[date] = None, 
+    search: Optional[str] = None
+):
+    if category or start_date or end_date or search:
+        return get_filtered_expenses(category, start_date, end_date, search)
     return get_all_expenses()
 
 @app.delete("/delete-expense/{expense_id}")
