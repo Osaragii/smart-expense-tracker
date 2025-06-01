@@ -2,108 +2,163 @@ import csv
 from models import Expense
 from pathlib import Path
 
-CSV_FILE = Path("expense.csv")
+CSV_FILE = Path("expenses.csv")
 
-#To check header present or not meow
-if not CSV_FILE.exists():
-    with open(CSV_FILE, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["id", "amount", "category", "description", "date"])
+# Initialize CSV file with headers
+def initialize_csv():
+    if not CSV_FILE.exists():
+        with open(CSV_FILE, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["id", "amount", "category", "description", "date"])
 
-#To generate id for new items meowmeow
+# Initialize on import
+initialize_csv()
+
 def get_next_id():
+    """Generate next available ID"""
     try:
-        with open(CSV_FILE, mode="r") as f:
+        with open(CSV_FILE, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            ids = [int(row["id"]) for row in reader]
+            ids = []
+            for row in reader:
+                try:
+                    ids.append(int(row["id"]))
+                except (ValueError, KeyError):
+                    continue
             return max(ids) + 1 if ids else 1
     except FileNotFoundError:
+        initialize_csv()
         return 1
 
-#Add feature meow
 def add_expense(expense: Expense):
-    expense_id = get_next_id()
-    with open(CSV_FILE, mode="a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([expense_id, expense.amount, expense.category, expense.description, expense.date])
-    return {"message": "Expense added", "id": expense_id}
+    """Add new expense to CSV"""
+    try:
+        expense_id = get_next_id()
+        with open(CSV_FILE, mode="a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                expense_id, 
+                expense.amount, 
+                expense.category, 
+                expense.description, 
+                str(expense.date)
+            ])
+        return {"message": "Expense added successfully", "id": expense_id}
+    except Exception as e:
+        return {"error": f"Failed to add expense: {str(e)}"}
 
-#To read all expenses meow
 def get_all_expenses():
-    with open(CSV_FILE, mode="r") as f:
-        reader = csv.DictReader(f)
-        return list(reader)
-    
-#Delete feature meow
+    """Read all expenses from CSV"""
+    try:
+        with open(CSV_FILE, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            expenses = []
+            for row in reader:
+                # Clean and validate data
+                if row.get("id") and row.get("amount"):
+                    expenses.append({
+                        "id": row["id"],
+                        "amount": row["amount"],
+                        "category": row["category"],
+                        "description": row["description"],
+                        "date": row["date"]
+                    })
+            return expenses
+    except FileNotFoundError:
+        initialize_csv()
+        return []
+
 def delete_expense(expense_id: int):
-    updated_rows = []
-    deleted = False
-    with open(CSV_FILE, mode="r") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if int(row["id"]) != expense_id:
-                updated_rows.append(row)
-            else:
-                deleted = True
-    
-    if not deleted:
-        return {"error": "Expense not found"}
+    """Delete expense by ID"""
+    try:
+        updated_rows = []
+        deleted = False
+        
+        with open(CSV_FILE, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if int(row["id"]) != expense_id:
+                    updated_rows.append(row)
+                else:
+                    deleted = True
+        
+        if not deleted:
+            return {"error": "Expense not found"}
 
-    with open(CSV_FILE, mode="w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "amount", "category", "description", "date"])
-        writer.writeheader()
-        writer.writerows(updated_rows)
+        # Rewrite file without deleted expense
+        with open(CSV_FILE, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["id", "amount", "category", "description", "date"])
+            writer.writeheader()
+            writer.writerows(updated_rows)
 
-    return {"message": "Expense deleted"}
+        return {"message": "Expense deleted successfully"}
+    except Exception as e:
+        return {"error": f"Failed to delete expense: {str(e)}"}
 
-#For updating expenses meow meow meow
 def update_expense(expense_id: int, updated_expense: Expense):
-    updated_rows = []
-    found = False
-    with open(CSV_FILE, mode="r") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if int(row["id"]) == expense_id:
-                updated_rows.append({
-                    "id": expense_id,
-                    "amount": updated_expense.amount,
-                    "category": updated_expense.category,
-                    "description": updated_expense.description,
-                    "date": str(updated_expense.date)
-                })
-                found = True
-            else:
-                updated_rows.append(row)
-            
+    """Update existing expense"""
+    try:
+        updated_rows = []
+        found = False
+        
+        with open(CSV_FILE, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if int(row["id"]) == expense_id:
+                    updated_rows.append({
+                        "id": expense_id,
+                        "amount": updated_expense.amount,
+                        "category": updated_expense.category,
+                        "description": updated_expense.description,
+                        "date": str(updated_expense.date)
+                    })
+                    found = True
+                else:
+                    updated_rows.append(row)
+        
         if not found:
             return {"error": "Expense not found"}
         
-        with open(CSV_FILE, mode="w", newline="") as f:
+        # Rewrite file with updated data
+        with open(CSV_FILE, mode="w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["id", "amount", "category", "description", "date"])
             writer.writeheader()
-            writer.writerrows(updated_rows)
+            writer.writerows(updated_rows)
 
-        return {"message": "Expense updated"}
+        return {"message": "Expense updated successfully"}
+    except Exception as e:
+        return {"error": f"Failed to update expense: {str(e)}"}
 
-#Filter Expenses
 def get_filtered_expenses(category=None, start_date=None, end_date=None, search=None):
-    with open(CSV_FILE, mode="r") as f:
-        reader = csv.DictReader(f)
-        filtered = []
+    """Get filtered expenses based on criteria"""
+    try:
+        with open(CSV_FILE, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            filtered = []
 
-        for row in reader:
-            if category and row["category"].lower() != category.lower():
-                continue
+            for row in reader:
+                # Skip empty rows
+                if not row.get("id"):
+                    continue
+                    
+                # Category filter
+                if category and row["category"].lower() != category.lower():
+                    continue
 
-            if start_date and row["date"] < str(start_date):
-                continue
+                # Date filters
+                if start_date and row["date"] < str(start_date):
+                    continue
 
-            if end_date and row["date"] > str(end_date):
-                continue
+                if end_date and row["date"] > str(end_date):
+                    continue
 
-            if search and search.lower() not in row["description"].lower():
-                continue
+                # Search filter
+                if search and search.lower() not in row["description"].lower():
+                    continue
 
-            filtered.append(row)
+                filtered.append(row)
 
-    return filtered
+            return filtered
+    except FileNotFoundError:
+        initialize_csv()
+        return []
